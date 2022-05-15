@@ -7,3 +7,4 @@
 - [C108-内卷星球大冒险](https://www.bilibili.com/video/BV1iR4y1A78p)
 - [C109-重生之我是老师模拟器](https://www.bilibili.com/video/BV11541197PB)
 - [C111-贪吃蛇](https://www.bilibili.com/video/BV1W541197tv)
+- [C112-旋转隔栅加密](https://www.bilibili.com/video/BV1dY4y1r7G4/)
