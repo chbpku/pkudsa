@@ -12,3 +12,4 @@
 - [C111-贪吃蛇](https://www.bilibili.com/video/BV1W541197tv)
 - [C112-旋转隔栅加密](https://www.bilibili.com/video/BV1dY4y1r7G4/)
 - [C113-小o的奇妙冒险之旅](https://www.bilibili.com/video/BV1t3411A7sE)
+- [C114-智能语音闹钟](https://www.bilibili.com/video/bv1G5411R7e5)
