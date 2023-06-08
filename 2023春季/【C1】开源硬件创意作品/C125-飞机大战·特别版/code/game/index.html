@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="./assets/pixi.min.js"></script>
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+
+<body>
+  <script>
+    //创建应用
+    var app = new PIXI.Application(512, 768);
+    document.body.appendChild(app.view);
+    app.view.style.height = "100%";
+
+    //添加背景
+    var bg = new PIXI.Sprite.fromImage("res/img_bg_level_4.jpg");
+    app.stage.addChild(bg);
+
+    //添加子弹
+    var bulletImage = "res/bullet_01.png";
+    var bullet = new PIXI.Sprite.fromImage(bulletImage);
+    bullet.anchor.x = 0.5;   //设置飞机图片锚点为图片中心
+    bullet.anchor.y = 0.5;
+    app.stage.addChild(bullet);
+    var bullets = [bullet]; //子弹数组，用于存放子弹
+
+    //创建飞机图片
+    var plane = new PIXI.Sprite.fromImage("res/plane_blue_01.png");
+    app.stage.addChild(plane);
+    plane.anchor.x = 0.5;
+    plane.anchor.y = 0.5;
+    plane.x = 200;
+    plane.y = 600;
+    plane.vx = 0;
+    plane.vy = 0;
+
+    //添加敌机
+    var picOfEnemy = ["assets/c++.png", "assets/java.png", "assets/python.png","assets/C.png","assets/go.png","assets/js.png","assets/php.png","assets/html.png"];
+    var enemy = new PIXI.Sprite.fromImage("assets/c++.png");
+    enemy.scale.set(0.8, 0.8);
+    app.stage.addChild(enemy);
+    enemy.anchor.x = 0.5;   //设置飞机图片锚点为图片中心
+    enemy.anchor.y = 0.5;
+    enemy.x = 200;
+    var enemies = [enemy];
+
+    //创建得分显示文本
+    var scoreTxt = new PIXI.Text("功德 0", { fill: "white" });
+    app.stage.addChild(scoreTxt); //将文本添加到舞台
+    var score = 0; //得分变量，记录得分使用
+
+    var isGameOver = false; //是否游戏结束
+    app.ticker.add(delta => animate(delta)); //指定帧频函数
+    var timer = 0; //计时器，用于计算子弹发射间隔
+    var interval = 50; //子弹发射间隔
+    var einterval = 100; //敌机出现间隔
+    var isUp = false;
+    var cheat = false;
+    var crashSize = 40;
+    var times = 0;
+
+    let left = keyboard("ArrowLeft"),
+      right = keyboard("ArrowRight");
+      up = keyboard("ArrowUp");
+      down = keyboard("ArrowDown");
+      enter = keyboard("Enter");
+
+    //Left arrow key `press` method
+    left.press = () => {
+      plane.vx = -10;
+      plane.vy = 0;
+    };
+    //Left arrow key `release` method
+    left.release = () => {
+      if (!right.isDown && plane.vy === 0) {
+        plane.vx = 0;
+      }
+    };
+
+    //Right
+    right.press = () => {
+      plane.vx = 10;
+      plane.vy = 0;
+    };
+    right.release = () => {
+      if (!left.isDown && plane.vy === 0) {
+        plane.vx = 0;
+      }
+    };
+
+    up.press = () => {
+      plane.vy = -5;
+      plane.vx = 0;
+    };
+    up.release = () => {
+      if (!down.isDown && plane.vx === 0) {
+        plane.vy = 0;
+      }
+    };
+
+    down.press = () => {
+      plane.vy = 5;
+      plane.vx = 0;
+    };
+    down.release = () => {
+      if (!up.isDown && plane.vx === 0) {
+        plane.vy = 0;
+      }
+    };
+
+    // enter
+    var presses = 0;
+    enter.press = () => {
+      presses++;
+      if (presses % 2 == 1) {
+        interval = 15;
+        einterval = 50;
+        bulletImage = "/assets/python.png";
+        cheat = true;
+      } else {
+        interval = 50;
+        einterval = 100-10*times;
+        bulletImage = "res/bullet_01.png";
+        cheat = false;
+      }
+    }
+
+    function animate(delta) {
+      if (isGameOver == true) { //如果游戏结束，则不执行下面动画
+        return;
+      }
+
+      // 如果timer满interval，发射子弹
+      timer++;
+      if (timer % interval==0) {
+        // 新建子弹，存入子弹数组
+        var newBullet = new PIXI.Sprite.fromImage(bulletImage);
+        newBullet.anchor.x = 0.5;   //设置飞机图片锚点为图片中心
+        newBullet.anchor.y = 0.5;
+        newBullet.x = plane.x;
+        newBullet.y = plane.y;
+        app.stage.addChild(newBullet);
+        bullets.push(newBullet);
+      }
+      if (timer % einterval==0) {
+        // 新建敌机，存入敌机数组
+        var pic = picOfEnemy[Math.floor(Math.random() * picOfEnemy.length)];
+        var newEnemy = new PIXI.Sprite.fromImage(pic);
+        newEnemy.anchor.x = 0.5;   //设置飞机图片锚点为图片中心
+        newEnemy.anchor.y = 0.5;
+        newEnemy.x = Math.random() * 450 + 30;
+        newEnemy.y = -100;
+        newEnemy.scale.set(0.8, 0.8);
+        // 延迟随机秒后出现
+        setTimeout(function () {
+          app.stage.addChild(newEnemy);
+          enemies.push(newEnemy);
+        }, Math.random() * 200);
+      }
+
+      plane.x += plane.vx;
+      plane.y += plane.vy;
+      // 如果越界，复位
+      if (plane.x < 0) {
+        plane.x = 0;
+      }
+      if (plane.x > 500) {
+        plane.x = 500;
+      }
+      if (plane.y < 0) {
+        plane.y = 0;
+      }
+      if (plane.y > 700) {
+        plane.y = 700;
+      }
+
+      //背景移动
+      bg.y += 2;
+      if (bg.y >= 0) {
+        bg.y = -768;
+      }
+
+      // 敌机移动
+      for (var i = 0; i < enemies.length; i++) {
+        var enemy = enemies[i];
+        enemy.y += 5;
+        if (enemy.y > 800) {
+          if (enemy.texture.baseTexture.imageUrl=="assets/python.png") {
+            app.stage.removeChild(enemy);
+            enemies.splice(i, 1);
+            continue;
+          }
+          isGameOver = true;
+          fetch("http://127.0.0.1:8000/status?id=3");
+          if (confirm("敌军已突破防线，是否重开？") == true) {
+            window.location.reload();
+          }
+          continue;
+        }
+        //玩家飞机与敌机碰撞
+        if (hitTestRectangle(plane, enemy)) {
+          //游戏结束标记
+          isGameOver = true;
+          fetch("http://127.0.0.1:8000/status?id=3");
+          //是否重玩
+          if (confirm("您已坠机！") == true) {
+            window.location.reload();
+          }
+        }
+      }
+      // 遍历bullets中的bullet
+      for (var j = 0; j < bullets.length; j++) {
+        var bullet = bullets[j];
+        bullet.y -= 10;
+        if (bullet.y < 10) {
+          app.stage.removeChild(bullet);
+          bullets.splice(j, 1);
+          continue;
+        }
+        // 遍历enemies中的enemy
+        for (var i = 0; i < enemies.length; i++) {
+          var enemy = enemies[i];
+          //子弹与敌机碰撞
+          if(hitTestRectangle(bullet, enemy)){
+            // 将敌机移出数组
+            app.stage.removeChild(enemy);
+            enemies.splice(i, 1);
+            // 将子弹移出数组
+            app.stage.removeChild(bullet);
+            bullets.splice(j, 1);
+            // 如果敌机图片是python
+            if (enemy.texture.baseTexture.imageUrl=="assets/python.png") {
+              score-=2;
+              fetch("http://127.0.0.1:8000/status?id=4");
+              scoreTxt.text = "功德 " + score + " 误伤友军！";
+              scoreTxt.style.fill = 0xff0000;
+              setTimeout(function() {
+                scoreTxt.style.fill = 0xffffff;
+              }, 1000);
+              continue;
+            }
+            //得分+1
+            score++;
+            if(isUp){
+              scoreTxt.text = "功德 " + score + " 奖励时间！";
+            }
+            else{
+              scoreTxt.text = "功德 " + score;
+            }
+            if(score % 20==0 && score!=0 && !cheat) {
+              isUp = true;
+              scoreTxt.text = "功德 " + score + " 奖励时间！";
+              fetch("http://127.0.0.1:8000/status?id=2");
+              times++;
+              interval = 30;
+              einterval = 50;
+              bulletImage = "res/img_bullet_14.png";
+              crashSize = 80;
+              setTimeout(function() {
+                isUp = false;
+                interval = 50;
+                einterval = 100-times*10; // 动态难度，提升敌机出现速度
+                bulletImage = "res/bullet_01.png";
+                crashSize = 40;
+              }, 5000);
+            }
+          }
+        }
+      }
+    }
+
+    // copied from tutorial
+    function keyboard(value) {
+      let key = {};
+      key.value = value;
+      key.isDown = false;
+      key.isUp = true;
+      key.press = undefined;
+      key.release = undefined;
+      //The `downHandler`
+      key.downHandler = event => {
+        if (event.key === key.value) {
+          if (key.isUp && key.press) key.press();
+          key.isDown = true;
+          key.isUp = false;
+          event.preventDefault();
+        }
+      };
+
+      //The `upHandler`
+      key.upHandler = event => {
+        if (event.key === key.value) {
+          if (key.isDown && key.release) key.release();
+          key.isDown = false;
+          key.isUp = true;
+          event.preventDefault();
+        }
+      };
+
+      //Attach event listeners
+      const downListener = key.downHandler.bind(key);
+      const upListener = key.upHandler.bind(key);
+      
+      window.addEventListener(
+        "keydown", downListener, false
+      );
+      window.addEventListener(
+        "keyup", upListener, false
+      );
+      
+      // Detach event listeners
+      key.unsubscribe = () => {
+        window.removeEventListener("keydown", downListener);
+        window.removeEventListener("keyup", upListener);
+      };
+      
+      return key;
+    }
+
+    // copied from tutorial, add difficulty setting
+    function hitTestRectangle(r1, r2) {
+      difficulty = 1.12;
+      //Define the variables we'll need to calculate
+      let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+      //hit will determine whether there's a collision
+      hit = false;
+      //Find the center points of each sprite
+      r1.centerX = r1.x + r1.width / 2;
+      r1.centerY = r1.y + r1.height / 2;
+      r2.centerX = r2.x + r2.width / 2;
+      r2.centerY = r2.y + r2.height / 2;
+      //Find the half-widths and half-heights of each sprite
+      r1.halfWidth = r1.width / 2;
+      r1.halfHeight = r1.height / 2;
+      r2.halfWidth = r2.width / 2;
+      r2.halfHeight = r2.height / 2;
+      //Calculate the distance vector between the sprites
+      vx = r1.centerX - r2.centerX;
+      vy = r1.centerY - r2.centerY;
+      //Figure out the combined half-widths and half-heights
+      combinedHalfWidths = (r1.halfWidth + r2.halfWidth) / difficulty;
+      combinedHalfHeights = (r1.halfHeight + r2.halfHeight) / difficulty;
+      //Check for a collision on the x axis
+      if (Math.abs(vx) < combinedHalfWidths) {
+        //A collision might be occurring. Check for a collision on the y axis
+        if (Math.abs(vy) < combinedHalfHeights) {
+          //There's definitely a collision happening
+          hit = true;
+        } else {
+          //There's no collision on the y axis
+          hit = false;
+        }
+      } else {
+        //There's no collision on the x axis
+        hit = false;
+      }
+      //`hit` will be either `true` or `false`
+      return hit;
+    };
+  </script>
+
+  <div class="rule">
+    <h1>规则</h1>
+    <p>1. 消灭所有敌人，如果被敌人通过防线，即判定为负</p>
+    <p>2. 如果与敌人或者友军发生碰撞，判定为坠机</p>
+    <p>（注：唯一的友军就是Python）</p>
+    <p>3. 每消灭一个敌人，会获得1分，如果误伤友军，会扣除2分</p>
+    <p>4. 友军可以正常通过防线，不会触发判定</p>
+    <p>5. 每消灭20个敌人，会获得5s奖励时间，此段时间内武器升级，但敌人的生成速度也会加快</p>
+    <p>6. 为了防止游戏时间过长，每进入一次奖励时间，敌人生成速度就会加快一次</p>
+    <p>隐藏作弊模式：以Python为武器，横扫一切敌人和友军！</p>
+  </div>
+
+</body>
+</html>
